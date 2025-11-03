@@ -75,10 +75,20 @@ if __name__ == '__main__':
     # Always collect static files (doesn't require database)
     print("📦 Collecting static files...")
     try:
-        call_command('collectstatic', verbosity=1, interactive=False, clear=False)
+        call_command('collectstatic', verbosity=2, interactive=False, clear=True)
         print("✅ Static files collected successfully.")
+        
+        # Verify static files directory exists and has content
+        static_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'staticfiles')
+        if os.path.exists(static_root):
+            static_count = sum([len(files) for r, d, files in os.walk(static_root)])
+            print(f"📊 Found {static_count} static files in {static_root}")
+        else:
+            print(f"⚠️  Warning: Static files directory {static_root} does not exist!")
     except Exception as e:
-        print(f"⚠️  Warning: Static files collection had issues: {e}")
+        import traceback
+        print(f"❌ Error collecting static files: {e}")
+        print(traceback.format_exc())
         print("⚠️  Service will continue, but static files may not load correctly.")
     
     if check_database_connection():
