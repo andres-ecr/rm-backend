@@ -72,6 +72,15 @@ if __name__ == '__main__':
     else:
         print("⚠️  DATABASE_URL environment variable is not set!")
     
+    # Always collect static files (doesn't require database)
+    print("📦 Collecting static files...")
+    try:
+        call_command('collectstatic', verbosity=1, interactive=False, clear=False)
+        print("✅ Static files collected successfully.")
+    except Exception as e:
+        print(f"⚠️  Warning: Static files collection had issues: {e}")
+        print("⚠️  Service will continue, but static files may not load correctly.")
+    
     if check_database_connection():
         print("✅ Running migrations...")
         try:

@@ -8,12 +8,14 @@ from corsheaders.defaults import default_headers
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'y$1lk3vhs23xh&9@#ar1h*l=1f7v4afl^7&8iizz7kd4vdutxp')
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY', 'y$1lk3vhs23xh&9@#ar1h*l=1f7v4afl^7&8iizz7kd4vdutxp')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get(
+    'ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -53,17 +55,19 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # Must be right after SecurityMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 # CORS settings - Open for Capacitor.js frontend
-CORS_ALLOW_ALL_ORIGINS = True  # Open for Capacitor.js which doesn't have a specific domain
+# Open for Capacitor.js which doesn't have a specific domain
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = [
     # Capacitor.js origins
@@ -154,7 +158,8 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     # Check if SSL is required via environment variable
     # Default to False for internal Docker/Coolify connections
-    ssl_require_env = os.environ.get('POSTGRES_SSL_REQUIRE', 'false').lower() == 'true'
+    ssl_require_env = os.environ.get(
+        'POSTGRES_SSL_REQUIRE', 'false').lower() == 'true'
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -203,7 +208,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# WhiteNoise configuration for serving static files in production
+if not DEBUG:
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Enable compression and caching
+    WHITENOISE_USE_FINDERS = False  # Only serve files from STATIC_ROOT
+    WHITENOISE_MANIFEST_STRICT = False  # Don't fail if manifest.json is missing
+else:
+    # In development, use default storage
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
