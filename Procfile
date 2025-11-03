@@ -1,1 +1,1 @@
-web: gunicorn route_monitor.wsgi
+web: python check_db_and_migrate.py && gunicorn route_monitor.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
