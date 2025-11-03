@@ -16,6 +16,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
+# Make startup script executable
+RUN chmod +x start.sh || true
+
 # Expose port
 EXPOSE 8000
 
@@ -23,6 +26,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/api/health/')" || exit 1
 
-# Run migrations, collect static files, and start server
-CMD python check_db_and_migrate.py && gunicorn route_monitor.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --access-logfile - --error-logfile -
+# Use startup script that runs collectstatic and migrations
+CMD ["./start.sh"]
 
