@@ -152,11 +152,14 @@ WSGI_APPLICATION = 'route_monitor.wsgi.application'
 # Use DATABASE_URL if available (production PostgreSQL), otherwise fallback to SQLite for local development
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
+    # Check if SSL is required via environment variable
+    # Default to False for internal Docker/Coolify connections
+    ssl_require_env = os.environ.get('POSTGRES_SSL_REQUIRE', 'false').lower() == 'true'
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
-            ssl_require=not DEBUG
+            ssl_require=ssl_require_env
         )
     }
 else:
