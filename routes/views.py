@@ -768,3 +768,39 @@ def health_check(request):
         'message': 'Service is running'
     })
 
+@api_view(['GET'])
+def static_files_debug(request):
+    """Debug endpoint to check static files configuration"""
+    from django.conf import settings
+    import os
+    
+    static_root = settings.STATIC_ROOT
+    static_url = settings.STATIC_URL
+    debug = settings.DEBUG
+    
+    # Check if staticfiles directory exists
+    static_dir_exists = os.path.exists(static_root) if static_root else False
+    static_files_count = 0
+    static_files_sample = []
+    
+    if static_dir_exists:
+        try:
+            for root, dirs, files in os.walk(static_root):
+                for file in files[:10]:  # Sample first 10 files
+                    rel_path = os.path.relpath(os.path.join(root, file), static_root)
+                    static_files_sample.append(rel_path)
+                static_files_count = sum([len(files) for r, d, files in os.walk(static_root)])
+        except Exception as e:
+            pass
+    
+    return Response({
+        'static_root': static_root,
+        'static_url': static_url,
+        'debug': debug,
+        'static_dir_exists': static_dir_exists,
+        'static_files_count': static_files_count,
+        'static_files_sample': static_files_sample[:10],
+        'whitenoise_middleware': 'whitenoise.middleware.WhiteNoiseMiddleware' in settings.MIDDLEWARE,
+        'middleware_order': [m for m in settings.MIDDLEWARE if 'whitenoise' in m.lower() or 'static' in m.lower()],
+    })
+

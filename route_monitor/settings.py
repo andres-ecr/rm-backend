@@ -210,19 +210,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 
 # WhiteNoise configuration for serving static files in production
-# WhiteNoise serves files from STATIC_ROOT when DEBUG=False
-# Don't set STATICFILES_STORAGE in production - let WhiteNoise handle it
-# STATICFILES_STORAGE is only used during collectstatic
-if not DEBUG:
-    # For production: use WhiteNoise storage during collectstatic
-    STATICFILES_STORAGE = 'whitenoise.storage.WhiteNoiseStaticFilesStorage'
-    # WhiteNoise settings
-    WHITENOISE_USE_FINDERS = False  # Only serve from STATIC_ROOT, not from finders
-    WHITENOISE_AUTOREFRESH = False  # Don't check for file changes in production
-    WHITENOISE_MANIFEST_STRICT = False  # Don't fail if manifest issues
-else:
-    # In development, use default storage
-    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+# Use standard storage for collectstatic, WhiteNoise middleware will serve them
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# WhiteNoise settings (only applies when middleware is active)
+WHITENOISE_USE_FINDERS = False  # Only serve from STATIC_ROOT in production
+WHITENOISE_AUTOREFRESH = DEBUG  # Only auto-refresh in development
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

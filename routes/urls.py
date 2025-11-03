@@ -34,5 +34,6 @@ urlpatterns = [
     path('delete-client/<int:pk>/', views.delete_client, name='delete_client'),
     path('update-guard/<int:pk>/', views.update_guard, name='update_guard'),
     path('health/', views.health_check, name='health_check'),
+    path('static-debug/', views.static_files_debug, name='static_files_debug'),
 ]
 
