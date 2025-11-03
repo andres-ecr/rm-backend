@@ -74,22 +74,47 @@ if __name__ == '__main__':
     
     # Always collect static files (doesn't require database)
     print("📦 Collecting static files...")
+    from django.conf import settings
+    
     try:
+        # Ensure STATIC_ROOT directory exists before collectstatic
+        static_root = settings.STATIC_ROOT
+        if not static_root:
+            print("❌ ERROR: STATIC_ROOT is not configured in settings!")
+            sys.exit(1)
+        
+        # Create directory if it doesn't exist
+        os.makedirs(static_root, exist_ok=True)
+        print(f"📁 Static files directory: {static_root}")
+        
+        # Run collectstatic
         call_command('collectstatic', verbosity=2, interactive=False, clear=True)
         print("✅ Static files collected successfully.")
         
         # Verify static files directory exists and has content
-        static_root = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'staticfiles')
+        print(f"🔍 Checking static files directory: {static_root}")
+        
         if os.path.exists(static_root):
             static_count = sum([len(files) for r, d, files in os.walk(static_root)])
             print(f"📊 Found {static_count} static files in {static_root}")
+            
+            if static_count == 0:
+                print("❌ ERROR: Static files directory exists but is empty!")
+                print("❌ collectstatic may have failed silently or found no files.")
+                sys.exit(1)
         else:
-            print(f"⚠️  Warning: Static files directory {static_root} does not exist!")
+            print(f"❌ ERROR: Static files directory {static_root} does not exist!")
+            print("❌ collectstatic did not create the directory. Check permissions and settings.")
+            sys.exit(1)
+            
+    except SystemExit:
+        raise  # Re-raise SystemExit
     except Exception as e:
         import traceback
-        print(f"❌ Error collecting static files: {e}")
+        print(f"❌ ERROR: Failed to collect static files: {e}")
         print(traceback.format_exc())
-        print("⚠️  Service will continue, but static files may not load correctly.")
+        print("❌ Without static files, the admin interface and API will not work correctly.")
+        sys.exit(1)
     
     if check_database_connection():
         print("✅ Running migrations...")
