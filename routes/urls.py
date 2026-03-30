@@ -14,6 +14,7 @@ urlpatterns = [
     path('list-routes/', views.list_routes, name='list_routes'),
     path('delete-route/<int:pk>/', views.delete_route, name='delete_route'),
     path('assign-guard/', views.assign_guard, name='assign_guard'),
+    path('guard-assignments/', views.list_guard_assignments, name='list_guard_assignments'),
     path('list-guards/', views.list_guards, name='list_guards'),
     path('daily-report/', views.daily_report, name='daily_report'),
     path('create-guard/', views.create_guard, name='create_guard'),

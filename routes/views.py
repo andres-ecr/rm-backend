@@ -12,7 +12,7 @@ from django.db.models import Prefetch
 from django.http import JsonResponse
 from .models import Client, Route, GuardAssignment, RouteRun, Checkpoint, CheckpointScan, UserProfile, Incident, Occurrence
 from .serializers import (
-    ClientSerializer, RouteSerializer, OptimizedGuardAssignmentSerializer, UserSerializer,
+    ClientSerializer, RouteSerializer, GuardAssignmentListSerializer, OptimizedGuardAssignmentSerializer, UserSerializer,
     AssignmentCheckpointScanSerializer, IncidentSerializer, ReportRouteRunSerializer, OccurrenceSerializer,
     AssignmentRouteRunSerializer
 )
@@ -389,11 +389,19 @@ def assign_guard(request):
         
         if route.client != client:
             return Response({'error': 'No puedes asignar rutas de otros clientes'}, status=status.HTTP_403_FORBIDDEN)
-        
-        assignment, created = GuardAssignment.objects.update_or_create(
-            guard=guard,
-            defaults={'route': route, 'shift': shift}
-        )
+
+        with transaction.atomic():
+            existing = GuardAssignment.objects.filter(guard=guard).first()
+            if existing and existing.route_id != route.id:
+                for active_run in RouteRun.objects.filter(
+                    assignment=existing, completed=False
+                ):
+                    active_run.mark_as_completed()
+
+            assignment, created = GuardAssignment.objects.update_or_create(
+                guard=guard,
+                defaults={'route': route, 'shift': shift}
+            )
         serializer = OptimizedGuardAssignmentSerializer(assignment)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
     except User.DoesNotExist:
@@ -402,6 +410,27 @@ def assign_guard(request):
         return Response({'error': 'Ruta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser|IsClientUser])
+def list_guard_assignments(request):
+    if request.user.is_superuser:
+        qs = GuardAssignment.objects.all()
+    elif (hasattr(request.user, 'userprofile') and request.user.userprofile.is_admin) or hasattr(
+        request.user, 'client'
+    ):
+        client = request.user.client if hasattr(request.user, 'client') else request.user.userprofile.client
+        if not client:
+            return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+        qs = GuardAssignment.objects.filter(guard__userprofile__client=client)
+    else:
+        return Response({'error': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+    assignments = qs.select_related('route', 'guard').prefetch_related(
+        Prefetch('route_runs', queryset=RouteRun.objects.filter(completed=False), to_attr='active_runs')
+    ).order_by('guard__username')
+    serializer = GuardAssignmentListSerializer(assignments, many=True)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

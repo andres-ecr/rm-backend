@@ -168,6 +168,30 @@ class AssignmentRouteRunSerializer(serializers.ModelSerializer):
             return AssignmentCheckpointScanSerializer(latest_scan).data
         return None
 
+class GuardAssignmentListSerializer(serializers.ModelSerializer):
+    """Lightweight list for admin dashboards (no nested checkpoints)."""
+
+    guard = serializers.SerializerMethodField()
+    route = serializers.SerializerMethodField()
+    shift_display = serializers.CharField(source='get_shift_display', read_only=True)
+    has_active_run = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GuardAssignment
+        fields = ['id', 'guard', 'route', 'shift', 'shift_display', 'has_active_run']
+
+    def get_guard(self, obj):
+        return {'id': obj.guard.id, 'username': obj.guard.username}
+
+    def get_route(self, obj):
+        return {'id': obj.route.id, 'name': obj.route.name}
+
+    def get_has_active_run(self, obj):
+        if hasattr(obj, 'active_runs'):
+            return len(obj.active_runs) > 0
+        return obj.route_runs.filter(completed=False).exists()
+
+
 class OptimizedGuardAssignmentSerializer(serializers.ModelSerializer):
     guard = serializers.SerializerMethodField()
     route = RouteSerializer(read_only=True)
