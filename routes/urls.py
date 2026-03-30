@@ -12,6 +12,7 @@ urlpatterns = [
     path('scan/', views.scan_checkpoint, name='scan_checkpoint'),
     path('create-route/', views.create_route, name='create_route'),
     path('list-routes/', views.list_routes, name='list_routes'),
+    path('delete-route/<int:pk>/', views.delete_route, name='delete_route'),
     path('assign-guard/', views.assign_guard, name='assign_guard'),
     path('list-guards/', views.list_guards, name='list_guards'),
     path('daily-report/', views.daily_report, name='daily_report'),

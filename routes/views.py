@@ -349,6 +349,21 @@ def list_routes(request):
     serializer = RouteSerializer(routes, many=True)
     return Response(serializer.data)
 
+@api_view(['DELETE'])
+@permission_classes([IsSuperAdmin])
+def delete_route(request, pk):
+    try:
+        route = Route.objects.get(pk=pk)
+    except Route.DoesNotExist:
+        return Response({'error': 'Ruta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        route.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Exception as e:
+        logger.exception('Error deleting route %s', pk)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['POST'])
 @permission_classes([IsAdminUser|IsClientUser])
 def assign_guard(request):
